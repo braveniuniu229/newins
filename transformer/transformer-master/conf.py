@@ -9,12 +9,12 @@ import torch
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # model parameter setting
-batch_size = 128
+batch_size = 10
 max_len = 256
 d_model = 512
-n_layers = 6
+n_layers = 3
 n_heads = 8
-ffn_hidden = 2048
+ffn_hidden = 1024
 drop_prob = 0.1
 
 # optimizer parameter setting

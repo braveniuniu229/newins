@@ -24,6 +24,7 @@ class ScaleDotProductAttention(nn.Module):
     def forward(self, q, k, v, mask=None, e=1e-12):
         # input is 4 dimension tensor
         # [batch_size, head, length, d_tensor]
+        
         batch_size, head, length, d_tensor = k.size()
 
         # 1. dot product Query with Key^T to compute similarity

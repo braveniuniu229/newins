@@ -1,6 +1,6 @@
 """
-@author : Hyunwoong
-@when : 2019-10-22
+@author : zwz
+@when : 2023-9-6
 @homepage : https://github.com/gusdnd852
 """
 from torch import nn

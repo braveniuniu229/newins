@@ -179,7 +179,7 @@ class LayerNorm(nn.Module):
         self.beta = nn.Parameter(torch.zeros(d_model))
         self.eps = eps
 
-    def forward(self, x):
+    def forward(self, x): 
         mean = x.mean(-1, keepdim=True)
         var = x.var(-1, unbiased=False, keepdim=True)
         # '-1' means last dimension. 

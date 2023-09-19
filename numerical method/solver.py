@@ -76,100 +76,100 @@ def msolver():
         b[0::ny]+=-Tbottom #set every ny-th element to -Tbottom
         # 最外层的参数，大问题定义，共十个类别
         for t in range(10):
-            type_group = f.create_group(f"type_{t+1}")
+            type_group = f.create_group(f"type_{t}")
             # 随机生成四个位置
             random_coords = [(np.random.randint(1, nx+1 ), np.random.randint(1, ny+1)) for _ in range(4)]
             
             
             for p in range(1000):       
-                param_group = type_group.create_group(f"param_{p+1}")
+                param_group = type_group.create_group(f"param_{p}")
                 # 对于每一组确定的位置生成1000种不同的温度
         
                 for pos_x, pos_y in random_coords:
                     rand_temp = np.random.uniform(0, 100)
                     T[pos_y, pos_x] = rand_temp
                     b[pos_y + (pos_x-1)*ny - 1]=T[pos_y, pos_x]
-                    d = np.ones(n) # diagonals
-                     
-                    d0 = d*-4
-                    d1 = d[0:-1]
-                    d5 = d[0:-ny]
+                
+                d = np.ones(n) # diagonals
+                d0 = d*-4
+                d1 = d[0:-1]
+                d5 = d[0:-ny]
 
-                    A = scipy.sparse.diags([d0, d1, d1, d5, d5], [0, 1, -1, ny, -ny], format='csc')
-                    for k in range(1,nx):
-                        A[i, j], A[j, i] = 0, 0
-                    #alternatively (scalar broadcasting version:)
-                    #A = scipy.sparse.diags([1, 1, -4, 1, 1], [-5, -1, 0, 1, 5], shape=(15, 15)).toarray()
+                A = scipy.sparse.diags([d0, d1, d1, d5, d5], [0, 1, -1, ny, -ny], format='csc')
+                for k in range(1,nx):
+                    A[i, j], A[j, i] = 0, 0
+                #alternatively (scalar broadcasting version:)
+                #A = scipy.sparse.diags([1, 1, -4, 1, 1], [-5, -1, 0, 1, 5], shape=(15, 15)).toarray()
 
-                    # 求解矩阵，二阶微分用拉普拉斯算子代替
-             
+                # 求解矩阵，二阶微分用拉普拉斯算子代替
+            
 
+
+                
+                theta = scipy.sparse.linalg.spsolve(A,b) #theta=sc.linalg.solve_triangular(A,d)
+                
+                
+                
+                
+
+                # surfaceplot:
+                # x = np.linspace(0, xmax, Nx + 1)
+                # y = np.linspace(0, ymax, Ny + 1)
+
+                # X,Y= np.meshgrid(x, y)
+
+                
+
+
+                # set the imposed boudary values
+                T_solved[-1,:] = Ttop
+                T_solved[0,:] = Tbottom
+                T_solved[:,0] = Tleft
+                T_solved[:,-1] = Tright
+
+
+                for j in range(1,ny+1):
+                    for i in range(1, nx + 1):
+                        T_solved[j, i] = theta[j + (i-1)*ny - 1]
+                
+                all_unique_coords = generate_all_unique_coordinates(nx, ny, 40, 41)
+                for group_num1 in range(40):
+                    grp = param_group.create_group(f"group_{group_num1}")
+                    unique_coords=all_unique_coords[group_num1]
 
                     
-                    theta = scipy.sparse.linalg.spsolve(A,b) #theta=sc.linalg.solve_triangular(A,d)
-                    
-                    
-                    
-                   
-
-                    # surfaceplot:
-                    # x = np.linspace(0, xmax, Nx + 1)
-                    # y = np.linspace(0, ymax, Ny + 1)
-
-                    # X,Y= np.meshgrid(x, y)
-
-                    
+                    # 这里是key矩阵的创建
+                    key_matrix = np.zeros((5, 45))
+                    for col, (x, y) in enumerate(unique_coords + random_coords):
+                        key_matrix[0, col] = group_num1
+                        key_matrix[1, col] = x
+                        key_matrix[2, col] = y
+                        key_matrix[3, col] = T[y, x]
+                        if col >= 41:
+                            key_matrix[4, col] = 1
 
 
-                    # set the imposed boudary values
-                    T_solved[-1,:] = Ttop
-                    T_solved[0,:] = Tbottom
-                    T_solved[:,0] = Tleft
-                    T_solved[:,-1] = Tright
-
-
-                    for j in range(1,ny+1):
-                        for i in range(1, nx + 1):
-                            T_solved[j, i] = theta[j + (i-1)*ny - 1]
-                    
-                    all_unique_coords = generate_all_unique_coordinates(nx, ny, 40, 41)
-                    for group_num1 in range(40):
-                        unique_coords=all_unique_coords[group_num1]
-
-                        
-                        # 这里是key矩阵的创建
-                        key_matrix = np.zeros((5, 45))
-                        for col, (x, y) in enumerate(unique_coords + random_coords):
-                            key_matrix[0, col] = group_num1
-                            key_matrix[1, col] = x
-                            key_matrix[2, col] = y
-                            key_matrix[3, col] = T[y, x]
-                            if col >= 41:
-                                key_matrix[4, col] = 1
-
-
-                        # 创建value矩阵
-                        value_matrix = np.zeros((5, 45), dtype=np.complex)
-                        for col, (x, y) in enumerate(unique_coords):
-                            value_matrix[0, col] = group_num1 + 1j
+                    # 创建value矩阵
+                    value_matrix = np.zeros((5, 45), dtype=np.complex)
+                    for col, (x, y) in enumerate(unique_coords):
+                        value_matrix[0, col] = group_num1 + 1j
+                        value_matrix[1, col] = x
+                        value_matrix[2, col] = y
+                        value_matrix[3, col] = T_solved[y, x]  # 可以根据需要更改为其他求解后的值
+                    for col, (x, y) in enumerate(random_coords, start=41):
                             value_matrix[1, col] = x
                             value_matrix[2, col] = y
                             value_matrix[3, col] = T_solved[y, x]  # 可以根据需要更改为其他求解后的值
-                        for col, (x, y) in enumerate(random_coords, start=41):
-                                value_matrix[1, col] = x
-                                value_matrix[2, col] = y
-                                value_matrix[3, col] = T_solved[y, x]  # 可以根据需要更改为其他求解后的值
-                        
+                    
 
-                        # 创建query矩阵
-                        query_matrix = key_matrix.copy()
-                        query_matrix[3, :] = 0
-                        
-                        # 将每一组数据写入数据集中
-                        grp = param_group.create_group(f"group_{group_num1}")
-                        grp.create_dataset("key", data=key_matrix)
-                        grp.create_dataset("value", data=value_matrix)
-                        grp.create_dataset("query", data=query_matrix)
-
-                        print(f"type:{t}\tpara:{p}\tgroup:{group_num1}\n")
-                
+                    # 创建query矩阵
+                    query_matrix = key_matrix.copy()
+                    query_matrix[3, :] = 0
+                    
+                    # 将每一组数据写入数据集中
+                    
+                    grp.create_dataset("key", data=key_matrix)
+                    grp.create_dataset("value", data=value_matrix)
+                    grp.create_dataset("query", data=query_matrix)
+                    
+                    print(f"type:{t+1}\tpara:{p+1}\tgroup:{group_num1+1}\n")

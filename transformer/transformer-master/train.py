@@ -1,7 +1,7 @@
 """
-@author : Hyunwoong
-@when : 2019-10-22
-@homepage : https://github.com/gusdnd852
+@author : zwz
+@when : 2023-9-5
+@homepage : https://github.com/braveniuniu229
 """
 import math
 import time
@@ -11,8 +11,6 @@ from torch.optim import Adam
 
 from data import *
 from models.model.transformer import Transformer
-from util.bleu import idx_to_word, get_bleu
-from util.epoch_timer import epoch_time
 
 
 def count_parameters(model):
