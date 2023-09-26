@@ -21,49 +21,42 @@ class CustomHDF5Dataset(Dataset):
     def _load_data(self):
         with h5py.File(self.file_path, 'r') as f:
             for t in f.keys():
-                for p in f[t].keys():
-                    groups = [f[t][p][f'group_{i}'] for i in range(40)]
+                for xl_idx in f[t].keys():
+                    data_entry = {'t': t, 'xl_idx': xl_idx}
+                    self.data.append(data_entry)
+
                     
-                    for i in range(0, 40, 5):
-                        group_set = groups[i:i+5]
 
-                        # Extract encoder and decoder data
-                        encoder_data = [g['key'][:] for g in group_set[:-1]]
-                        decoder_data = group_set[-1]['query'][:]
-
-                        data_entry = {
-                            "encoder": encoder_data,
-                            "decoder": decoder_data
-                        }
-
-                        # If it's the last set, append to validation set if required
-                        if i == 35:
-                            if not self.train:
-                                self.data.append(data_entry)
-                        else:
-                            if self.train:
-                                self.data.append(data_entry)
-
-        # Shuffle the data
-        np.random.shuffle(self.data)
+       
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index):
-        data_entry = self.data[index]
+        with h5py.File(self.file_path, 'r') as f:
+            data_entry = self.data[index]
+            t, xl_idx = data_entry['t'], data_entry['xl_idx']
+            
+            encoder_groups = [f[t][xl_idx]['encoder'][f'sample{sample_idx}'] for sample_idx in range(4)]
+            decoder_groups = f[t][xl_idx]['decoder']['sample4']
 
-        encoder_tensor = torch.tensor(data_entry['encoder'], dtype=torch.float32)
-        decoder_tensor = torch.tensor(data_entry['decoder'], dtype=torch.float32)
+            encoder_T_data = [g['T'][: , : ] for g in encoder_groups]
+            encoder_vector_data = [g['vector'][ : ] for g in encoder_groups]
+            decoder_vector_data = decoder_groups['vector']
+            target_data = decoder_groups['T']
 
-        return encoder_tensor, decoder_tensor
+            encoder_T_tensor = torch.tensor(encoder_T_data, dtype=torch.float32)
+            encoder_vector_tensor = torch.tensor(encoder_vector_data, dtype=torch.float32)
+            decoder_vector_tensor = torch.tensor(decoder_vector_data, dtype=torch.float32)
+            target_tensor = torch.tensor(target_data, dtype=torch.float32)
+
+        return encoder_T_tensor, encoder_vector_tensor, decoder_vector_tensor, target_tensor
+
  
-# Usage:
-train_dataset = CustomHDF5Dataset('your_dataset_path.hdf5', train=True)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
-val_dataset = CustomHDF5Dataset('your_dataset_path.hdf5', train=False)
-val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+
+
+
 
 
        

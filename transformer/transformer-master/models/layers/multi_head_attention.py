@@ -19,7 +19,7 @@ class MultiHeadAttention(nn.Module):
         self.w_v = nn.Linear(d_model, d_model)
         self.w_concat = nn.Linear(d_model, d_model)
 
-    def forward(self, q, k, v, mask=None):
+    def forward(self, q, k, v):
         # 1. dot product with weight matrices
         q, k, v = self.w_q(q), self.w_k(k), self.w_v(v)
 
@@ -27,7 +27,7 @@ class MultiHeadAttention(nn.Module):
         q, k, v = self.split(q), self.split(k), self.split(v)
 
         # 3. do scale dot product to compute similarity
-        out, attention = self.attention(q, k, v, mask=mask)
+        out, attention = self.attention(q, k, v)
 
         # 4. concat and pass to linear layer
         out = self.concat(out)
