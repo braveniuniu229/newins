@@ -34,7 +34,7 @@ def add_gaussian_heat(x, y, amplitude, sigma, b_vector):
             r = np.sqrt((i - x)**2 + (j - y)**2)
             b_vector[j + (i-1)*ny - 1] -= amplitude * np.exp(-r**2/(2*sigma**2))
     return b_vector
-n_samples_per_type = 10000
+n_samples_per_type = 200000
 
 #这里是选择的16个观测点
 points_indices = np.random.choice(Nx*Ny, 16, replace=False)
@@ -65,7 +65,7 @@ def generate_sample(type_points):
 
 with h5py.File('dataset.h5', 'w') as f:
     for type_idx in range(5):
-        type_points = [tuple(np.random.randint(0, Nx, 2)) for _ in range(4)]
+        type_points = [tuple(np.random.randint(0, Nx, 1)) for _ in range(4)]
         type_grp = f.create_group(f'type{type_idx}')
         n_xl_per_type = n_samples_per_type // 5
         for xl_idx in range(n_samples_per_type // 5):

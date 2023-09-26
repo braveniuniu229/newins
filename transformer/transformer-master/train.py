@@ -40,9 +40,11 @@ weight_decay = 5e-4
 inf = float('inf')
 
 train_dataset = data.CustomHDF5Dataset('E:\code\incontextSimulator\dataset.h5', train=True)
-train_loader = data.DataLoader(train_dataset, batch_size=5, shuffle=True)
+train_loader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-num_epochs = 1 
+test_dataset = CustomHDF5Dataset('path_to_your_test_dataset', train=False)  # 请确保这里是您的测试集
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -78,7 +80,7 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
 
 criterion = nn.MSELoss()
 
-
+num_epochs = 1 
 
 # 在训练开始前定义一个变量来存储最低损失，并初始化为无穷大
 min_loss = inf
@@ -103,15 +105,26 @@ for epoch in range(num_epochs):
         total_loss += loss.item()
         
         # 每10个iteration打印一次损失
-        if i % 10 == 0:
+        if i % 100 == 0:
             print(f"Iter {i}, Loss: {loss.item()}")
     
-    average_loss = total_loss / len(train_loader)
-    print(f"Epoch {epoch+1}, Loss: {average_loss}, Time: {time.time() - epoch_start_time}s")
+    model.eval()  # 切换到评估模式
+    test_loss = 0.0
+    with torch.no_grad():  # 禁用梯度计算
+        for i, (encoder_T, encoder_vector, decoder_vector, target) in enumerate(test_loader):
+            encoder_T, encoder_vector, decoder_vector, target = encoder_T.to(device), encoder_vector.to(device), decoder_vector.to(device), target.to(device)
+            outputs = model(encoder_T, encoder_vector, decoder_vector,target)
+            loss = criterion(outputs, target.view(target.size(0),-1))
+            test_loss += loss.item()
     
-    # 如果当前epoch的平均损失小于之前记录的最低损失，更新最低损失并保存模型
-    if average_loss < min_loss:
-        min_loss = average_loss
+    average_test_loss = test_loss / len(test_loader)
+    print(f"Epoch {epoch+1}, Test Loss: {average_test_loss}")
+    
+    # 比较测试损失，保存在测试集上表现最好的模型
+    if average_test_loss < min_test_loss:
+        min_test_loss = average_test_loss
         torch.save(model.state_dict(), model_save_path)
-        print(f"Model saved with average loss: {min_loss}")
+        print(f"Model saved on test set with loss: {min_test_loss}")
+    
+    model.train()  # 切换回训练模式
 
