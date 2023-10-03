@@ -27,7 +27,8 @@ xmax=1.0
 ymax=1.0
 x = np.linspace(0, xmax, Nx + 1)
 y = np.linspace(0, ymax, Ny + 1)
-type_points = [tuple(np.random.randint(0, Nx, 2)) for _ in range(4)]
+type_points = [tuple(np.random.randint(1, Nx, 2)) for _ in range(4)]
+print(type_points)
 T,_=solvergussian.generate_sample(type_points)
 
 def draw(T):
